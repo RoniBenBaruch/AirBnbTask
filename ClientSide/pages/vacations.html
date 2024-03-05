@@ -1,0 +1,223 @@
+﻿<html>
+<head>
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../js/ajaxCalls.js"></script>
+    <link href="../CSS/nav.css" rel="stylesheet" />
+   
+    <script>
+        const vacationApi = location.hostname === "localhost" || location.hostname === "127.0.0.1" ?
+            "https://localhost:7227/api/Vacations" :
+            `https://proj.ruppin.ac.il/cgroup60/test2/tar1/api/Vacations`;
+        $(document).ready(function () {
+            $("#idFTB").val(`${getFlatIdUsingQueryString()}`)
+            // bind the submit event to a function called f1
+            $("#VacationsForm").submit(f1)
+            $("#idSD").on("change", datesValidation);
+            $("#idED").on("change", datesValidation);
+            $("#vacationsBTN").on("click", renderVacations)
+
+
+            loggedInUserJSON = sessionStorage.getItem('loggedInUser');
+            if (loggedInUserJSON == null) {
+                $('#VacationsForm input').prop('disabled', true);
+                $('#submitBtn').prop('disabled', true);
+                $('#VacationsForm input').val('');
+                $('#vacationsBTN').prop('disabled', true);
+
+                swal("Go to log in Or Register!", "you cannot order a vacation without log in", "error");
+             
+                $("#navi").append(`<a class="nav-item nav-link" href="LogIn.html">Log in</a>
+                  <a class="nav-item nav-link" href="userRegister.html">Register</a>`);
+
+            } else {
+                loggedInUser = JSON.parse(loggedInUserJSON);
+                showVacationOnly($("#idFTB").val());
+
+                $("#navi").append(`<a class="nav-item nav-link" href="userRegister.html">Update details</a>
+
+
+                <a class="nav-item nav-link" id="logOut">Log Out</a>`);
+                $("#logOut").on("click",function () {
+                    sessionStorage.removeItem('loggedInUser');
+                    if (sessionStorage.getItem('loggedInUser') == null)
+                    { swal("Log Out", "Logged out succesfully!", "success"); }
+                    $("#navi").html(`<a class="nav-item nav-link" href="mainPage.html">Home</a>
+                  <a class="nav-item nav-link" href="LogIn.html">Log in</a>
+                  <a class="nav-item nav-link" href="userRegister.html">Register</a>`)
+                    location.reload();
+                });
+            }
+
+
+
+            
+        });
+
+        function showVacationOnly(flatId) {
+            if (flatId == '') {
+                $('#VacationsForm input').prop('disabled', true);
+                $('#submitBtn').prop('disabled', true);
+                $('#VacationsForm input').val('');
+            
+                swal("you can only watch your vacations",
+                    "if you want to order vacation, first pick a flat from the flats page ", "warning")
+            }
+        }
+        function getFlatIdUsingQueryString() {
+            let quertString = window.location.search;
+            let urlParams = new URLSearchParams(quertString)
+            return urlParams.get('flatID');
+        }
+
+
+        function datesValidation() {
+            let today = new Date();
+            let startDate = new Date($("#idSD").val());
+            let endDate = new Date($("#idED").val());
+            let todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            let daysDifference = (Number(endDate) - Number(startDate)) / (1000 * 60 * 60 * 24);
+
+            if (startDate < todayDate) {
+                $("#idED")[0].validity.valid = false;;// must set it to false to prevent the submit to the server
+                $("#idSD")[0].setCustomValidity('You cannot enter a vacation with dates in the past');
+                return;
+            }
+
+            if (endDate < todayDate) {
+                $("#idED")[0].validity.valid = false;;// must set it to false to prevent the submit to the server
+                $("#idED")[0].setCustomValidity('You cannot enter a vacation with dates in the past');
+                $("#idSD")[0].setCustomValidity('');
+                return;
+            }
+
+            if (endDate < startDate) {
+                $("#idED")[0].validity.valid = false;// must set it to false to prevent the submit to the server
+                $("#idED")[0].setCustomValidity('The end date should be greater than the start date');
+                $("#idSD")[0].setCustomValidity('');
+                return;
+            }
+
+            if (daysDifference > 20) {
+                $("#idED")[0].validity.valid = false;// must set it to false to prevent the submit to the server
+                $("#idED")[0].setCustomValidity('The vacation cannot exceed 20 days');
+                $("#idSD")[0].setCustomValidity('');
+                return;
+            }
+
+            $("#idSD")[0].validity.valid = true;
+            $("#idED")[0].validity.valid = true;
+            $("#idSD")[0].setCustomValidity('');
+            $("#idED")[0].setCustomValidity('');
+
+        }
+
+        function addVacation() {
+            let vacation = {
+                FlatId: $("#idFTB").val(),
+                UserId: loggedInUser.id,
+                UserEmail: loggedInUser.email,
+                StartDate: $("#idSD").val(),
+                EndDate: $("#idED").val(),
+            }
+            console.log(vacation);
+            ajaxCall("POST", vacationApi, JSON.stringify(vacation), postSCB, postECB);
+
+        }
+        function postSCB(IsvacationInsertSuccess) {
+            if (IsvacationInsertSuccess == true) {
+                swal("Submitted to the server!", "Great Job", "success");
+            }
+            else {
+                swal("Error!", "vacation dates alreay booked", "error");
+            }
+        }
+        function postECB(err) {
+            console.log(err);
+        }
+        function renderVacations() {
+            ajaxCall("GET", vacationApi, "", getSCB, getECB);
+        }
+
+        function getSCB(vacationsList) {
+            console.log(vacationsList);
+            $("#dynamicVacationsDiv").html("");
+            let str = "";
+            
+            for (let i = 0; i < vacationsList.length; i++) {
+                if (vacationsList[i].userEmail == loggedInUser.email) { 
+                    str += `<div class='col-md-3'>`;
+                    str += `<div class='card mt-3'>`;
+                    str += `<div class='card-body'>`;
+                    str += `<h3 class='card-header bg-white'>Vacation ID: ${vacationsList[i].id}</h3>`;
+                    str += `<p class='card-text'><strong>user ID:</strong> ${vacationsList[i].userId}</p>`;
+                    str += `<p class='card-text'><strong>Flat ID:</strong> ${vacationsList[i].flatId}</p>`;
+                    str += `<p class='card-text'><strong>Start date:</strong> ${vacationsList[i].startDate}</p>`;
+                    str += `<p class='card-text'><strong>End date:</strong> ${vacationsList[i].endDate}</p>`;
+                    str += `</div>`;
+                    str += `</div>`;
+                    str += `</div>`;
+                }
+            }
+            if (str == "") {
+                str = "<h3>No vacations found</h3>";
+            }
+            $("#dynamicVacationsDiv").append(str);
+        }
+        function getECB(err) {
+            console.log(err);
+        }
+        function f1() {
+            // the return false will prevent the form from being submitted
+            addVacation();
+            return false;
+        }
+
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Airbnb</a>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav ml-auto" id="navi">
+                <a class="nav-item nav-link" href="mainPage.html">Home</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h2>Submit Your Vacation Details:</h2>
+        <form id="VacationsForm">
+            <div class="mb-3">
+                <label class="form-label">Flat ID: <span class="text-danger">★</span></label>
+                <input type="number" class="form-control" id="idFTB" required disabled>
+            </div>
+
+
+            <div class="mb-3">
+                <label class="form-label">Start date: <span class="text-danger">★</span></label>
+                <input type="date" class="form-control" id="idSD" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">End date: <span class="text-danger">★</span></label>
+                <input type="date" class="form-control" id="idED" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">Submit</button>
+        </form>
+        <button id="vacationsBTN" type="button" class="btn btn-primary">Get All My Vacations</button>
+        <div id="extraButtons" class="row container mb-3"></div>
+        <div id="dynamicVacationsDiv" class="row container mt-5">
+
+
+
+
+        </div>
+
+    </div>
+</body>
+</html>
