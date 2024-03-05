@@ -1,0 +1,54 @@
+﻿body {
+    background-color: #f8f9fa;
+}
+
+.container {
+    margin-top: 50px;
+}
+
+.navbar {
+    background-color: #3498db; /* Darker blue, main background */
+    color: #000; /* White text */
+}
+
+.navbar-brand {
+    font-weight: bold;
+    /* Add a hover effect for the brand name */
+    color: #000;
+    transition: color 0.3s ease-in-out;
+}
+
+    .navbar-brand:hover {
+        color: #2980b9; /* Lighter blue on hover */
+    }
+
+.navbar-nav {
+    /* Margin from the left to create some space */
+    margin-left: 1rem;
+}
+
+.nav-link {
+    color: #000; /* White text for links */
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    transition: background-color 0.3s ease-in-out;
+}
+
+    .nav-link:hover {
+        background-color: #2980b9; /* Lighter blue on hover */
+    }
+
+.logout {
+    /* Style the logout button differently */
+    background-color: #e74c3c; /* Reddish shade for logout */
+    color: #fff;
+    /* Increase padding for more visibility */
+    padding: 0.75rem 1.5rem;
+    border: none; /* Remove default button border */
+    border-radius: 5px; /* Add rounded corners */
+    transition: background-color 0.3s ease-in-out;
+}
+
+    .logout:hover {
+        background-color: #c0392b; /* Darker red on hover */
+    }
