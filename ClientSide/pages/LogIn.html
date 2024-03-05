@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../js/ajaxCalls.js"></script>
+    <link href="../CSS/nav.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+    </style>
+
+    <script>
+        const api = location.hostname === "localhost" || location.hostname === "127.0.0.1" ?
+            "https://localhost:7227/api/Users/LogIn" :
+            `https://proj.ruppin.ac.il/cgroup60/test2/tar1/api/Users/LogIn`;
+        function PostLogIn(loggedUs) {
+            if (loggedUs.email == null) {
+                console.log("no such user..."); 
+               swal("no such user","email or password incorrect","error")
+
+            } else {
+                if (loggedUs.isActive == 0) {
+                    swal("inActive User", "your user is inActive! bye bye", "error");
+                    $("#homebtn").hide();
+                    $("#ph").hide();
+                    return;
+                }
+
+                sessionStorage.setItem('loggedInUser', JSON.stringify(loggedUs));
+                swal("welcome back", "Great!", "success");
+                $("#ph").html(`<br /><br /><button class="btn btn-primary btn-block" id="updateDetailsBtn">Update details</button>`);
+                $("#loginBtn").prop("disabled", true);
+
+                $('#updateDetailsBtn').click(function () {
+                    window.location.href = 'userRegister.html';
+
+                });
+                if (loggedUs.isAdmin == 1) {
+                    setTimeout(function () {
+                        window.location.replace('adminPage.html');
+                    }, 2000);
+                }
+            }
+        }
+  
+        $(document).ready(function () {
+
+            $('#loginForm').submit(function (event) {
+                event.preventDefault();
+
+                 user = {
+                    firstName: "logIn",
+                    familyName: "logIn",
+                    email: $('#loginEmail').val(),
+                    password: $('#loginPassword').val()
+                };
+
+
+                ajaxCall("POST", api, JSON.stringify(user), PostLogIn, postECB);
+
+
+
+               
+
+
+            });
+        });
+       
+        function postECB(err) {
+            console.log(err);
+        }
+        
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Airbnb</a>
+       
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav ml-auto">
+                <a class="nav-item nav-link" href="mainPage.html" id="homebtn">Home</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h2 class="text-center mb-4">User Login</h2>
+                <form id="loginForm" action="#" method="post">
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="loginEmail">Email:</label>
+                        <input type="email" class="form-control" id="loginEmail" name="loginEmail" required>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="loginPassword">Password:</label>
+                        <input type="password" class="form-control" id="loginPassword" name="loginPassword" required maxlength="8">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Login</button>
+                    <div id="ph"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
